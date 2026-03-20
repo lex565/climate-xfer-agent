@@ -980,6 +980,98 @@ with tab4:
         </div>
         """, unsafe_allow_html=True)
 
+        # ── Prompt Engineering Section ───────────────────────────────────────
+        st.markdown("""
+        <div class="card" style="border-top:3px solid #805AD5;">
+          <div class="section-label" style="color:#553C9A;">🧑‍💻 Prompt Engineering — What Was Sent to the Model</div>
+          <p style="font-size:0.84rem;color:#4A5568;line-height:1.7;margin-bottom:1rem;">
+            The agent is driven by two carefully crafted prompts passed to
+            <code>claude-opus-4-6</code> via the Anthropic Messages API.
+            Prompt design controls the agent's behaviour — without explicit instructions
+            to use <em>all four tools in order</em>, the model may skip steps or stop early.
+          </p>
+
+          <div class="section-label">① System Prompt — Sets the Agent's Role &amp; Rules</div>
+          <pre style="background:#FAF5FF;border:1px solid #E9D8FD;border-radius:8px;padding:1rem;font-size:0.76rem;line-height:1.6;color:#2D3748;white-space:pre-wrap;word-break:break-word;">You are a climate machine learning engineering agent.
+Use all four tools in the exact order specified.
+Extract real numbers from the provided inputs.</pre>
+          <p style="font-size:0.78rem;color:#718096;margin:0.4rem 0 1rem 0;line-height:1.5;">
+            <strong>Why:</strong> A concise, directive system prompt is more reliable than a long one.
+            Naming the constraint explicitly (<em>"all four tools in exact order"</em>) prevents the model
+            from short-circuiting the loop after the first tool call.
+          </p>
+
+          <div class="section-label">② User Message — Multimodal Input Construction</div>
+          <pre style="background:#FAF5FF;border:1px solid #E9D8FD;border-radius:8px;padding:1rem;font-size:0.76rem;line-height:1.6;color:#2D3748;white-space:pre-wrap;word-break:break-word;">[
+  {
+    "type": "image",
+    "source": {
+      "type": "base64",
+      "media_type": "image/png",
+      "data": "&lt;base64-encoded fig2_metrics_comparison.png&gt;"
+    }
+  },
+  {
+    "type": "text",
+    "text": "Results table (CSV):\\n```csv\\nregion,model,rmse,mae,...\\n```"
+  },
+  {
+    "type": "text",
+    "text": "You are an AI engineering agent analysing the CLIMATE-XFER project —
+a GRU-based climate transfer learning model predicting SPEI drought indices
+across SADC (Southern Africa) and SEA (Southeast Asia).
+Thoroughly analyse the provided diagram and/or table.
+You MUST call all four tools in sequence:
+(1) extract_performance_metrics,
+(2) identify_model_architectures,
+(3) compare_transfer_learning,
+(4) generate_engineering_summary.
+Be precise — use the actual numbers you observe."
+  }
+]</pre>
+          <p style="font-size:0.78rem;color:#718096;margin:0.4rem 0 1rem 0;line-height:1.5;">
+            <strong>Why multimodal:</strong> Sending both the image and the CSV table gives the model
+            two complementary evidence sources — visual bar heights from the figure and exact numeric
+            values from the table — improving extraction accuracy.
+            The numbered tool list in the instruction is a prompt engineering technique that enforces
+            a deterministic execution order in the agentic loop.
+          </p>
+
+          <div class="section-label">③ Example Tool Schema — extract_performance_metrics</div>
+          <pre style="background:#FAF5FF;border:1px solid #E9D8FD;border-radius:8px;padding:1rem;font-size:0.76rem;line-height:1.6;color:#2D3748;white-space:pre-wrap;word-break:break-word;">{
+  "name": "extract_performance_metrics",
+  "description": "Extract quantitative performance metrics (RMSE, MAE, Correlation)
+for each model and geographic region from the provided engineering diagram or table.",
+  "input_schema": {
+    "type": "object",
+    "properties": {
+      "metrics": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "properties": {
+            "model":       { "type": "string" },
+            "region":      { "type": "string" },
+            "transfer":    { "type": "string", "description": "none | zero_shot | finetune" },
+            "rmse":        { "type": "number" },
+            "mae":         { "type": "number" },
+            "correlation": { "type": "number" }
+          },
+          "required": ["model", "region"]
+        }
+      }
+    },
+    "required": ["metrics"]
+  }
+}</pre>
+          <p style="font-size:0.78rem;color:#718096;margin:0.4rem 0 0 0;line-height:1.5;">
+            <strong>Why JSON schema:</strong> The structured <code>input_schema</code> forces the model
+            to return machine-readable, typed output rather than free text — this is what enables
+            downstream automated processing of the extracted data. All four tools follow this pattern.
+          </p>
+        </div>
+        """, unsafe_allow_html=True)
+
         # Why no live API notice — prominent but tasteful
         st.markdown("""
         <div class="notice">
